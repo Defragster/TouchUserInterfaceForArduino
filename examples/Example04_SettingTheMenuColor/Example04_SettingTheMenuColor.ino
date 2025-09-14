@@ -46,12 +46,12 @@ TouchUserInterfaceForArduino ui;
 //
 // IO pin definitions, BE SURE TO: configure these values to match your hardware
 //
-const int LCD_CS_PIN     = 1;
-const int LCD_DC_PIN     = 4;
-const int TOUCH_CS_PIN   = 5;
-const int SPI_MOSI_PIN   = 3;
-const int SPI_MISO_PIN   = 0;
-const int SPI_SCK_PIN    = 2;
+const int LCD_CS_PIN     = 10; //xx 1;
+const int LCD_DC_PIN     = 9;  //xx 4;
+const int TOUCH_CS_PIN   = 41; //xx 5;
+const int SPI_MOSI_PIN   = 11; //xx x3;
+const int SPI_MISO_PIN   = 12; //xx 0;
+const int SPI_SCK_PIN    = 13; //xx 2;
 
 
 // ---------------------------------------------------------------------------------
@@ -73,7 +73,8 @@ void setup()
   //
   // initialize the ArduinoTouchUI
   //
-  ui.begin(LCD_CS_PIN, LCD_DC_PIN, TOUCH_CS_PIN, LCD_ORIENTATION_LANDSCAPE_4PIN_LEFT, UI_Font_13_Bold);
+  //xx ui.begin(LCD_CS_PIN, LCD_DC_PIN, TOUCH_CS_PIN, LCD_ORIENTATION_LANDSCAPE_4PIN_LEFT, UI_Font_13_Bold);
+  ui.begin(LCD_CS_PIN, LCD_DC_PIN, TOUCH_CS_PIN, LCD_ORIENTATION_LANDSCAPE_4PIN_RIGHT, UI_Font_13_Bold);
 
 
   //

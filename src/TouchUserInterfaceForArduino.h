@@ -34,7 +34,17 @@
 #define TouchUserInterfaceForArduino_h
 
 #include <Adafruit_GFX.h>
+
+#if __has_include("ILI9341_t3.h")
+#include <ILI9341_t3.h>
+#elif __has_include("ST7796_t3.h")
+#include <ST7796_t3.h>
+#define ILI9341_t3 ST7796_t3
+#elif __has_include("ILI9488_t3.h")
+#define ILI9341_t3 ILI9488_t3
+#else
 #include <Adafruit_ILI9341.h>
+#endif
 
 
 //
@@ -69,6 +79,12 @@ const uint16_t LCD_YELLOW =      0xFFE0;
 const uint16_t LCD_WHITE =       0xFFFF;
 const uint16_t LCD_ORANGE =      0xFD20;
 const uint16_t LCD_GREENYELLOW = 0xAFE5;
+
+
+//
+// datatype for fonts
+//
+typedef ILI9341_t3_font_t ui_font;
 
 
 //
@@ -396,6 +412,7 @@ class TouchUserInterfaceForArduino
     int touchScreenToLCDOffsetY;
     float touchScreenToLCDScalerY;
     int touchState;
+    int touchOrient;
 
 
     //

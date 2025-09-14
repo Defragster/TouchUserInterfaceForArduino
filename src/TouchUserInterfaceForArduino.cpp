@@ -208,14 +208,27 @@
 
 #include <EEPROM.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_ILI9341.h>
-#include <XPT2046_Touchscreen.h>
+//xx #include <Adafruit_ILI9341.h>
+#include <ST7796_t3.h>
+//xx#include <XPT2046_Touchscreen.h>
+#include <Adafruit_FT6206.h>
 #include "TouchUserInterfaceForArduino.h"
+#define ILI9341_t3 ST7796_t3
+#define Adafruit_ILI9341 ST7796_t3
+
 
 
 //
 // pointers to the LCD and Touch objects
 //
+#if __has_include("XPT2046_Touchscreen.h")
+#include <XPT2046_Touchscreen.h>
+#define TOUCH_MAP
+#elif __has_include("Adafruit_FT6206.h")
+#include <Adafruit_FT6206.h>
+#define XPT2046_Touchscreen Adafruit_FT6206
+#define TOUCH_PIXEL
+#endif
 Adafruit_ILI9341 *lcd;
 XPT2046_Touchscreen *ts;
 
@@ -264,9 +277,19 @@ void TouchUserInterfaceForArduino::begin(int lcdCSPin, int LcdDCPin, int TouchSc
   //
   // create the LCD and touchscreen objects
   //
-  lcd = new Adafruit_ILI9341(lcdCSPin, LcdDCPin);
+  //xx lcd = new Adafruit_ILI9341(lcdCSPin, LcdDCPin);
+  //xx ts = new XPT2046_Touchscreen(TouchScreenCSPin);
+  #if __has_include("ST7796_t3.h")
+  lcd = new ST7796_t3(lcdCSPin, LcdDCPin);
+#else
+  lcd = new ILI9341_t3(lcdCSPin, LcdDCPin);
+#endif
+#if __has_include("Adafruit_FT6206.h")
+  ts = new Adafruit_FT6206();
+#elif __has_include("XPT2046_Touchscreen.h")
   ts = new XPT2046_Touchscreen(TouchScreenCSPin);
-  
+#endif
+
   //
   // initialize the LCD and touch screen hardware
   //
@@ -3476,7 +3499,12 @@ const long TOUCH_AUTO_REPEAT_RATE = 120;
 //
 void TouchUserInterfaceForArduino::touchScreenInitialize(int lcdOrientation)
 {
+  #if __has_include("Adafruit_FT6206.h")
+  ts->begin(40);
+#elif __has_include("XPT2046_Touchscreen.h")
   ts->begin();
+#endif
+
   touchScreenSetOrientation(lcdOrientation);
 }
 
@@ -3489,8 +3517,10 @@ void TouchUserInterfaceForArduino::touchScreenInitialize(int lcdOrientation)
 //
 void TouchUserInterfaceForArduino::touchScreenSetOrientation(int lcdOrientation)
 {
+#ifdef TOUCH_MAP
   ts->setRotation((lcdOrientation + 2) % 4);
   setDefaultTouchScreenCalibrationConstants(lcdOrientation);
+#endif
   touchState = WAITING_FOR_TOUCH_DOWN_STATE;
 }
 
@@ -3768,11 +3798,47 @@ boolean TouchUserInterfaceForArduino::getTouchScreenCoords(int *xLCD, int *yLCD)
   //
   // convert the coordinates into LCD space
   //
+#ifdef TOUCH_MAP
   int x = (int)((float)xRaw / touchScreenToLCDScalerX) - touchScreenToLCDOffsetX;
   *xLCD = constrain(x, 0, lcdWidth - 1);
 
   int y = (int)((float)yRaw / touchScreenToLCDScalerY) - touchScreenToLCDOffsetY;
   *yLCD = constrain(y, 0, lcdHeight - 1);
+#endif
+
+#ifdef TOUCH_PIXEL
+  switch(touchOrient)
+  {
+    case LCD_ORIENTATION_PORTRAIT_4PIN_TOP:
+    {
+      *xLCD = xRaw;
+      *yLCD = yRaw;
+      break;
+    }
+    
+    case LCD_ORIENTATION_LANDSCAPE_4PIN_LEFT:
+    {
+      *xLCD = yRaw;
+      *yLCD = lcdHeight - xRaw;
+      break;
+    }
+    
+    case LCD_ORIENTATION_PORTRAIT_4PIN_BOTTOM:
+    {
+      *xLCD = lcdWidth - xRaw;
+      *yLCD = lcdHeight - yRaw;
+      break;
+    }
+    
+    case LCD_ORIENTATION_LANDSCAPE_4PIN_RIGHT:
+    default:
+    {
+      *xLCD = lcdWidth - yRaw;
+      *yLCD = xRaw;
+      break;
+    }
+  }
+#endif
 
   return(true);
 }
@@ -3815,11 +3881,17 @@ boolean TouchUserInterfaceForArduino::getRAWTouchScreenCoords(int *xRaw, int *yR
 //
 void TouchUserInterfaceForArduino::lcdInitialize(int lcdOrientation, const byte *font)
 {
+#if __has_include("ST7796_t3.h")
+  lcd->init(320, 480);
+  lcd->invertDisplay(true); 
+#else
   lcd->begin();
+#endif
   lcdSetOrientation(lcdOrientation);
   lcdClearScreen(LCD_BLACK);
   lcdSetFontColor(LCD_WHITE);  
   lcdSetFont(font);
+  touchOrient = lcdOrientation;
 }
 
 
@@ -4024,7 +4096,8 @@ void TouchUserInterfaceForArduino::lcdDrawFilledCircle(int x, int y, int radius,
 //
 void TouchUserInterfaceForArduino::lcdDrawImage(int x, int y, int width, int height, const uint16_t *image)
 {
-  lcd->drawRGBBitmap(x, y, image, width, height);
+  //xx lcd->drawRGBBitmap(x, y, image, width, height);
+  lcd->drawBitmap(x, y, (const uint8_t *)image, width, height, LCD_CYAN);
 }
 
 
