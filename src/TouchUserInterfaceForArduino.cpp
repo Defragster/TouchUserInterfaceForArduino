@@ -207,20 +207,17 @@
 // ---------------------------------------------------------------------------------
 
 #include <EEPROM.h>
+#if __has_include("Adafruit_ILI9341.h")
 #include <Adafruit_GFX.h>
-//xx #include <Adafruit_ILI9341.h>
+#include <Adafruit_ILI9341.h>
+#elif __has_include("ST7796_t3.h")
 #include <ST7796_t3.h>
-//xx#include <XPT2046_Touchscreen.h>
-#include <Adafruit_FT6206.h>
-#include "TouchUserInterfaceForArduino.h"
-#define ILI9341_t3 ST7796_t3
 #define Adafruit_ILI9341 ST7796_t3
-
-
-
-//
-// pointers to the LCD and Touch objects
-//
+#define ILI9341_t3 ST7796_t3
+#elif __has_include("ILI9488_t3.h")
+#include "ILI9488_t3.h"
+#define Adafruit_ILI9341 ILI9488_t3
+#endif
 #if __has_include("XPT2046_Touchscreen.h")
 #include <XPT2046_Touchscreen.h>
 #define TOUCH_MAP
@@ -229,6 +226,12 @@
 #define XPT2046_Touchscreen Adafruit_FT6206
 #define TOUCH_PIXEL
 #endif
+#include "TouchUserInterfaceForArduino.h"
+
+
+//
+// pointers to the LCD and Touch objects
+//
 Adafruit_ILI9341 *lcd;
 XPT2046_Touchscreen *ts;
 
@@ -277,13 +280,15 @@ void TouchUserInterfaceForArduino::begin(int lcdCSPin, int LcdDCPin, int TouchSc
   //
   // create the LCD and touchscreen objects
   //
-  //xx lcd = new Adafruit_ILI9341(lcdCSPin, LcdDCPin);
-  //xx ts = new XPT2046_Touchscreen(TouchScreenCSPin);
-  #if __has_include("ST7796_t3.h")
+#if __has_include("ST7796_t3.h")
   lcd = new ST7796_t3(lcdCSPin, LcdDCPin);
+#elif __has_include("ILI9488_t3.h")
+  lcd = new ILI9488_t3(&SPI, lcdCSPin, LcdDCPin);
 #else
-  lcd = new ILI9341_t3(lcdCSPin, LcdDCPin);
+  lcd = new Adafruit_ILI9341(lcdCSPin, LcdDCPin);
 #endif
+  //  lcd = new ILI9341_t3(lcdCSPin, LcdDCPin);
+
 #if __has_include("Adafruit_FT6206.h")
   ts = new Adafruit_FT6206();
 #elif __has_include("XPT2046_Touchscreen.h")
@@ -3499,12 +3504,11 @@ const long TOUCH_AUTO_REPEAT_RATE = 120;
 //
 void TouchUserInterfaceForArduino::touchScreenInitialize(int lcdOrientation)
 {
-  #if __has_include("Adafruit_FT6206.h")
+#if __has_include("Adafruit_FT6206.h")
   ts->begin(40);
 #elif __has_include("XPT2046_Touchscreen.h")
   ts->begin();
 #endif
-
   touchScreenSetOrientation(lcdOrientation);
 }
 
@@ -4096,8 +4100,11 @@ void TouchUserInterfaceForArduino::lcdDrawFilledCircle(int x, int y, int radius,
 //
 void TouchUserInterfaceForArduino::lcdDrawImage(int x, int y, int width, int height, const uint16_t *image)
 {
-  //xx lcd->drawRGBBitmap(x, y, image, width, height);
+#if __has_include("Adafruit_ILI9341.h")
+  lcd->drawRGBBitmap(x, y, image, width, height);
+#else
   lcd->drawBitmap(x, y, (const uint8_t *)image, width, height, LCD_CYAN);
+#endif
 }
 
 
